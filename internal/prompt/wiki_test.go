@@ -5,7 +5,19 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/vasya/protocol-voice-assistant/internal/logger"
 )
+
+func initWikiLogger(t *testing.T) {
+	t.Helper()
+	_ = logger.Init(logger.Config{
+		LogDir:   t.TempDir(),
+		LogFile:  "test.log",
+		MaxBytes: 1 << 20,
+		KeepOld:  2,
+	})
+}
 
 func setupWiki(t *testing.T) string {
 	dir := t.TempDir()
@@ -19,6 +31,7 @@ func setupWiki(t *testing.T) string {
 }
 
 func TestWikiBuildSimple(t *testing.T) {
+	initWikiLogger(t)
 	dir := setupWiki(t)
 	w := NewWikiBuilder(dir)
 	out, info, err := w.Build("_index.md")
@@ -54,6 +67,7 @@ func TestWikiBuildSimple(t *testing.T) {
 }
 
 func TestWikiBuildNoCycle(t *testing.T) {
+	initWikiLogger(t)
 	dir := setupWiki(t)
 	w := NewWikiBuilder(dir)
 	// многократный запуск не должен падать
@@ -65,6 +79,7 @@ func TestWikiBuildNoCycle(t *testing.T) {
 }
 
 func TestWikiUnsafePath(t *testing.T) {
+	initWikiLogger(t)
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "_index.md"), []byte("[[../../etc/passwd]]"), 0o644)
 	w := NewWikiBuilder(dir)
