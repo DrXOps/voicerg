@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/vasya/protocol-voice-assistant/internal/audio"
 	"github.com/vasya/protocol-voice-assistant/internal/config"
 	"github.com/vasya/protocol-voice-assistant/internal/icons"
 	"github.com/vasya/protocol-voice-assistant/internal/logger"
@@ -83,6 +84,10 @@ func main() {
 	})
 	lg.Info("config loaded, hash=" + cfg.Hash())
 
+	// --- Контекст всего приложения (для graceful shutdown).
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// --- Иконки: генерируем программно при первом запуске (fallback-набор).
 	iconFiles, iconErr := iconsGen(cfg.WorkingDir())
 	if iconErr != nil {
@@ -96,10 +101,35 @@ func main() {
 		lg.Info("state " + from.String() + " -> " + to.String() + " trigger=" + trigger)
 	})
 
+	// --- Аудио: перечисление устройств (для app_start) + захват.
+	audioSrc := audio.NewSource()
+	devices, devErr := audioSrc.ListDevices()
+	var devNames []string
+	for _, d := range devices {
+		devNames = append(devNames, d.Name)
+	}
+	if devErr != nil {
+		lg.Warn("audio: не удалось перечислить устройства: " + devErr.Error())
+	}
+	lg.Event("audio_devices", map[string]any{
+		"devices":         devNames,
+		"selected_device": cfg.DeviceName,
+		"count":           len(devNames),
+	})
+	lg.Info(fmt.Sprintf("audio: найдено устройств=%d, выбрано=%q", len(devNames), cfg.DeviceName))
+
+	// старт захвата (на Windows — реальный, на Linux — заглушка вернёт ошибку)
+	audioCtx, audioCancel := context.WithCancel(ctx)
+	defer audioCancel()
+	if err := audioSrc.Start(audioCtx, cfg.DeviceName); err != nil {
+		lg.Warn("audio: захват не запущен (этап без аудио-устройства?): " + err.Error())
+	} else {
+		lg.Info("audio: захват активен, канал готов")
+		go monitorAudio(audioSrc, lg)
+	}
+
 	// --- Трей.
 	app := tray.New(cfg, sm, openPath)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	// Запуск трея в отдельной горутине (systray.Run блокирует).
 	go func() {
@@ -124,6 +154,8 @@ func main() {
 		"uptime_seconds": int(uptime.Seconds()),
 		"session_id":     lg.SessionID(),
 	})
+	// фиксируем summary сессии (заглушка, наполнится последующими этапами)
+	writeSessionSummary(lg, workDir)
 	lg.Info(fmt.Sprintf("=== Вася остановлен, uptime=%s ===", uptime.Round(time.Second)))
 }
 

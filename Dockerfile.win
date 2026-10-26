@@ -1,0 +1,27 @@
+# Образ для кросс-компиляции проекта под Windows (mingw-w64).
+# Использование:
+#   docker build -t vasya-winbuild -f Dockerfile.win .
+#   docker run --rm -v "$PWD":/src -w /src vasya-winbuild \
+#       make build-windows
+FROM golang:1.24
+
+# mingw-w64 cross-compiler для Windows x86-64 (CGO_ENABLED=1)
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        gcc-mingw-w64-x86-64 \
+        binutils-mingw-w64-x86-64 \
+        pkg-config \
+        cmake \
+        make \
+        git \
+        ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Переменные для кросс-компиляции
+ENV CC=x86_64-w64-mingw32-gcc \
+    CXX=x86_64-w64-mingw32-g++ \
+    GOOS=windows \
+    GOARCH=amd64 \
+    CGO_ENABLED=1
+
+WORKDIR /src
