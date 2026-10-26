@@ -1,0 +1,38 @@
+# Сборки
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Логи (человекочитаемые + events.jsonl + сессии) — всё в logs/
+logs/
+*.log
+
+# Конфиг и пользовательские данные (секреты/личные настройки врача)
+config.json
+hotphrases.json
+critical_terms.json
+
+# Заметки (персональные), кроме .gitkeep
+notes/*.md
+!notes/.gitkeep
+
+# Модели Vosk (большие бинарники)
+models/
+
+# Сгенерированные иконки (дизайнерские исходники — в репо, сгенерённые — нет)
+icons/
+
+# Редакторы/ОС
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Временные
+tmp/
+*.tmp
+
+# Рецепты/промежуточные артефакты анализа
+*.receipt.json
