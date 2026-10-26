@@ -2,9 +2,17 @@ package paste
 
 import (
 	"testing"
+
+	"github.com/vasya/protocol-voice-assistant/internal/logger"
 )
 
+func initLog(t *testing.T) {
+	t.Helper()
+	_ = logger.Init(logger.Config{LogDir: t.TempDir(), LogFile: "t.log", MaxBytes: 1 << 20, KeepOld: 2})
+}
+
 func TestSmartPasteBuffersOnInvalidTarget(t *testing.T) {
+	initLog(t)
 	// Целевое окно не запомнено (invalid) — не вставляем, но кладём в буфер.
 	target := Window{HWND: 0, Title: "no", Valid: false}
 	res := SmartPaste(target, "важный текст", true)
@@ -20,6 +28,7 @@ func TestSmartPasteBuffersOnInvalidTarget(t *testing.T) {
 }
 
 func TestSmartPasteWithPasteDisabled(t *testing.T) {
+	initLog(t)
 	target := Window{HWND: 0, Valid: false}
 	res := SmartPaste(target, "текст", false) // pasteInActive=false
 	if res.Success != true {
@@ -34,6 +43,7 @@ func TestSmartPasteWithPasteDisabled(t *testing.T) {
 }
 
 func TestSmartPasteWindowMismatch(t *testing.T) {
+	initLog(t)
 	// Невалидное окно + вставка включена → fallback в буфер, не Пасте́д.
 	target := Window{HWND: 123, Title: "запомненное", Valid: false}
 	res := SmartPaste(target, "xyz", true)
