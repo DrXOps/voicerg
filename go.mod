@@ -5,6 +5,7 @@ go 1.24.4
 require github.com/getlantern/systray v1.2.2
 
 require (
+	github.com/alphacep/vosk-api/go v0.3.50 // indirect
 	github.com/gen2brain/malgo v0.11.26 // indirect
 	github.com/getlantern/context v0.0.0-20190109183933-c447772a6520 // indirect
 	github.com/getlantern/errors v0.0.0-20190325191628-abdb3e3e36f7 // indirect
