@@ -139,7 +139,7 @@ func Default() *Config {
 		// "anthropic/claude-haiku-latest" или "google/gemini-flash-latest".
 		IntentModel:               "openai/gpt-4o-mini",
 		IntentConfidenceThreshold: 0.6,
-		RouterAIKey:               "sk-...",
+		RouterAIKey:              "sk-aoiVlIf819ZjzWceXbHDU97fI_SWQppI",
 		RouterAIBaseURL:           "https://routerai.ru/api/v1",
 		STTModel:                  "openai/whisper-large-v3",
 		ClaudeModel:               "anthropic/claude-sonnet-5.5",
