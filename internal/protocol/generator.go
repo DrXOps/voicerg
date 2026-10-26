@@ -7,9 +7,15 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/vasya/protocol-voice-assistant/internal/hotphrases"
 	"github.com/vasya/protocol-voice-assistant/internal/llm"
 	"github.com/vasya/protocol-voice-assistant/internal/prompt"
 )
+
+// hotExpander — интерфейс локальной подстановки (для тестируемости).
+type hotExpander interface {
+	Apply(text string) (string, int)
+}
 
 // Generator создаёт протокол из диктовки.
 type Generator struct {
@@ -17,7 +23,7 @@ type Generator struct {
 	model    string
 	wiki     *prompt.WikiBuilder
 	mainFile string
-	hot      *HotPhrases // подстановка горячих фраз (этап 8; пока nil)
+	hot      hotExpander
 }
 
 // NewGenerator создаёт генератор протокола.
@@ -28,6 +34,11 @@ func NewGenerator(llmClient *llm.Client, model, mainFile string, wiki *prompt.Wi
 		wiki:     wiki,
 		mainFile: mainFile,
 	}
+}
+
+// SetHotPhrases подключает реальное хранилище горячих фраз.
+func (g *Generator) SetHotPhrases(h *hotphrases.Store) {
+	g.hot = h
 }
 
 // Result — результат генерации протокола.
@@ -51,6 +62,14 @@ func (g *Generator) Generate(ctx context.Context, dictation string, researchID s
 
 	// Подстановка горячих фраз (локально, до отправки в LLM).
 	processed, hotCount := expandHotPhrases(dictation)
+	if g.hot != nil {
+		var n int
+		processed, n = g.hot.Apply(dictation)
+		hotCount += n
+	}
+	if hotCount > 0 {
+		_ = hotCount // лог уже внутри Apply
+	}
 
 	userMsg := "Диктовка исследования:\n\n" + processed + "\n\n" +
 		"Сформируй структурированный протокол по правилам выше."
