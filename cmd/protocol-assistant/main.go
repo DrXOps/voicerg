@@ -13,6 +13,7 @@ import (
 
 	"github.com/vasya/protocol-voice-assistant/internal/audio"
 	"github.com/vasya/protocol-voice-assistant/internal/config"
+	"github.com/vasya/protocol-voice-assistant/internal/engine"
 	"github.com/vasya/protocol-voice-assistant/internal/icons"
 	"github.com/vasya/protocol-voice-assistant/internal/logger"
 	"github.com/vasya/protocol-voice-assistant/internal/state"
@@ -127,6 +128,14 @@ func main() {
 		lg.Info("audio: захват активен, канал готов")
 		go monitorAudio(audioSrc, lg)
 	}
+
+	// --- CommandRouter (связка модулей).
+	router := engine.NewRouter(sm)
+	router.Register(engine.NewIdleHandler(router, openPath))
+	router.Register(engine.NewDictationHandler(router))
+	router.Register(engine.NewNoteHandler(router))
+	router.Register(engine.NewCorrectionHandler(router))
+	lg.Info(fmt.Sprintf("engine: CommandRouter запущен, %d хендлеров", len(router.Handlers())))
 
 	// --- Трей.
 	app := tray.New(cfg, sm, openPath)
